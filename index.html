@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Data Analyzer - Professional Tool</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fab fa-youtube"></i>
+                    <h1>YouTube Data Analyzer</h1>
+                </div>
+                <p class="subtitle">Professional YouTube Channel & Video Analysis Tool</p>
+                <div class="features-badges">
+                    <span class="badge"><i class="fas fa-bolt"></i> No API Key Required</span>
+                    <span class="badge"><i class="fas fa-infinity"></i> Unlimited Usage</span>
+                    <span class="badge"><i class="fas fa-chart-line"></i> Advanced Analytics</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="status-bar">
+            <div class="status-item">
+                <i class="fas fa-server"></i>
+                <span id="connectionStatus">Connecting...</span>
+            </div>
+            <div class="status-item">
+                <i class="fas fa-clock"></i>
+                <span id="requestCount">0 requests today</span>
+            </div>
+            <div class="status-item">
+                <i class="fas fa-tachometer-alt"></i>
+                <span id="performanceStatus">Ready</span>
+            </div>
+        </div>
+
+        <nav class="tabs">
+            <button class="tab active" onclick="switchTab('channels')">
+                <i class="fas fa-tv"></i>
+                Channel Extractor
+            </button>
+            <button class="tab" onclick="switchTab('videos')">
+                <i class="fas fa-play"></i>
+                Video Analyzer
+            </button>
+            <button class="tab" onclick="switchTab('analytics')">
+                <i class="fas fa-chart-bar"></i>
+                Analytics Dashboard
+            </button>
+        </nav>
+
+        <main class="main-content">
+            <!-- Channel Extractor Tab -->
+            <section id="channels" class="tab-content active">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-download"></i> Extract ALL Videos from Channels</h2>
+                        <p>Analyze complete channel data with advanced metrics and insights</p>
+                    </div>
+                    
+                    <div class="input-section">
+                        <div class="input-group">
+                            <label for="channelUrls">
+                                <i class="fas fa-link"></i>
+                                Channel URLs or IDs
+                            </label>
+                            <textarea 
+                                id="channelUrls" 
+                                placeholder="Enter YouTube channel URLs or IDs (one per line):
+
+https://www.youtube.com/channel/UCxODfRBkBxGyE1r6C4Ybcaw
+https://www.youtube.com/@channelname
+UCxODfRBkBxGyE1r6C4Ybcaw"
+                                rows="6"
+                            ></textarea>
+                        </div>
+                        
+                        <div class="action-buttons">
+                            <button class="btn btn-primary" onclick="extractAllVideos()" id="extractBtn">
+                                <i class="fas fa-rocket"></i>
+                                Extract Channel Data
+                            </button>
+                            <button class="btn btn-secondary" onclick="exportChannelData()" id="exportChannelBtn" disabled>
+                                <i class="fas fa-file-csv"></i>
+                                Export CSV
+                            </button>
+                            <button class="btn btn-secondary" onclick="copyAllChannelData()" id="copyChannelBtn" disabled>
+                                <i class="fas fa-copy"></i>
+                                Copy Data
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="loading-section" id="channelLoading">
+                        <div class="loading-spinner"></div>
+                        <p id="loadingText">Initializing extraction...</p>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="channelProgress"></div>
+                        </div>
+                    </div>
+
+                    <div class="results-section" id="channelResults"></div>
+                </div>
+            </section>
+
+            <!-- Video Analyzer Tab -->
+            <section id="videos" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-video"></i> Analyze Individual Videos</h2>
+                        <p>Get detailed analytics for specific YouTube videos</p>
+                    </div>
+                    
+                    <div class="input-section">
+                        <div class="input-group">
+                            <label for="videoUrls">
+                                <i class="fas fa-play"></i>
+                                Video URLs or IDs
+                            </label>
+                            <textarea 
+                                id="videoUrls" 
+                                placeholder="Enter YouTube video URLs or IDs (one per line):
+
+https://www.youtube.com/watch?v=UVVrURKDxiA
+https://youtu.be/UVVrURKDxiA
+UVVrURKDxiA"
+                                rows="6"
+                            ></textarea>
+                        </div>
+                        
+                        <div class="action-buttons">
+                            <button class="btn btn-primary" onclick="analyzeVideos()" id="analyzeBtn">
+                                <i class="fas fa-search"></i>
+                                Analyze Videos
+                            </button>
+                            <button class="btn btn-secondary" onclick="exportVideoData()" id="exportVideoBtn" disabled>
+                                <i class="fas fa-file-csv"></i>
+                                Export CSV
+                            </button>
+                            <button class="btn btn-secondary" onclick="copyAllVideoData()" id="copyVideoBtn" disabled>
+                                <i class="fas fa-copy"></i>
+                                Copy Data
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="loading-section" id="videoLoading">
+                        <div class="loading-spinner"></div>
+                        <p id="videoLoadingText">Processing videos...</p>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="videoProgress"></div>
+                        </div>
+                    </div>
+
+                    <div class="results-section" id="videoResults"></div>
+                </div>
+            </section>
+
+            <!-- Analytics Dashboard Tab -->
+            <section id="analytics" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-chart-line"></i> Analytics Dashboard</h2>
+                        <p>Comprehensive insights and performance metrics</p>
+                    </div>
+                    
+                    <div class="analytics-grid" id="analyticsGrid">
+                        <div class="analytics-placeholder">
+                            <i class="fas fa-chart-pie"></i>
+                            <h3>No Data Available</h3>
+                            <p>Extract channel or video data to see analytics</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <div class="footer-content">
+                <p>&copy; 2024 YouTube Data Analyzer. Professional data extraction tool.</p>
+                <div class="footer-links">
+                    <span><i class="fas fa-shield-alt"></i> Secure</span>
+                    <span><i class="fas fa-bolt"></i> Fast</span>
+                    <span><i class="fas fa-mobile-alt"></i> Responsive</span>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toastMessage">Success!</span>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

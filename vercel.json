@@ -1,0 +1,29 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "server.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/server.js"
+    }
+  ],
+  "env": {
+    "API_ENDPOINT": "aHR0cHM6Ly95dGFwaS5hcHBzLm1hdHR3LmlvL3Yz",
+    "API_KEY_1": "Zm9vMQ==",
+    "API_KEY_2": "YmFyMg==",
+    "API_KEY_3": "dGVzdDM=",
+    "QUOTA_USER_1": "eHNTSGFIbXJtdHpGRWFYRjVTVmFaYUhQNkFrdmRCcUlRMEU2cU1jMw==",
+    "QUOTA_USER_2": "cmFuZG9tVXNlcjEyMw==",
+    "QUOTA_USER_3": "YW5vdGhlclVzZXI0NTY="
+  },
+  "functions": {
+    "server.js": {
+      "maxDuration": 30
+    }
+  }
+}
