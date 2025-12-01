@@ -44,15 +44,10 @@ function updatePerformanceStatus() {
 
 // Tab Management
 function switchTab(tabName) {
-    // Update tab buttons
     document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
     document.querySelector(`[onclick="switchTab('${tabName}')"]`).classList.add('active');
-    
-    // Update tab content
     document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
     document.getElementById(tabName).classList.add('active');
-    
-    // Update analytics if switching to analytics tab
     if (tabName === 'analytics') {
         updateAnalyticsDashboard();
     }
@@ -62,11 +57,9 @@ function switchTab(tabName) {
 function showToast(message, type = 'success') {
     const toast = document.getElementById('toast');
     const toastMessage = document.getElementById('toastMessage');
-    
     toastMessage.textContent = message;
     toast.className = `toast ${type}`;
     toast.classList.add('show');
-    
     setTimeout(() => {
         toast.classList.remove('show');
     }, 3000);
@@ -75,7 +68,6 @@ function showToast(message, type = 'success') {
 // Clipboard Functions
 function copyToClipboard(text) {
     const cleanText = text.replace(/\\'/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&');
-    
     if (navigator.clipboard && window.isSecureContext) {
         navigator.clipboard.writeText(cleanText).then(() => {
             showToast('Data copied to clipboard!');
@@ -95,14 +87,12 @@ function fallbackCopy(text) {
     document.body.appendChild(textarea);
     textarea.focus();
     textarea.select();
-    
     try {
         document.execCommand('copy');
         showToast('Data copied to clipboard!');
     } catch (err) {
         showToast('Copy failed. Please copy manually.', 'error');
     }
-    
     document.body.removeChild(textarea);
 }
 
@@ -110,17 +100,14 @@ function fallbackCopy(text) {
 async function makeAPIRequest(endpoint, params) {
     const creds = getRandomCreds();
     const url = `${API_CONFIG.base}${endpoint}?key=${creds.key}&quotaUser=${creds.quotaUser}&${params}&_=${Date.now()}`;
-    
     try {
         const response = await fetch(url);
         const data = await response.json();
         requestCount++;
         updateRequestCount();
-        
         if (data.error) {
             throw new Error(data.error.message || 'API Error');
         }
-        
         return data;
     } catch (error) {
         console.error('API Request failed:', error);
@@ -138,7 +125,6 @@ function extractChannelId(url) {
         { regex: /^([a-zA-Z0-9_-]{24})$/, type: 'id' },
         { regex: /^UC[a-zA-Z0-9_-]{22}$/, type: 'id' }
     ];
-    
     for (const pattern of patterns) {
         const match = url.match(pattern.regex);
         if (match) {
@@ -156,7 +142,6 @@ async function getChannelInfo(channelId) {
 async function resolveUsername(username) {
     const params = `part=snippet&type=channel&q=${encodeURIComponent(username)}&maxResults=5`;
     const data = await makeAPIRequest('/search', params);
-    
     if (data.items && data.items.length > 0) {
         for (const item of data.items) {
             const customUrl = item.snippet.customUrl;
@@ -166,36 +151,27 @@ async function resolveUsername(username) {
         }
         return data.items[0].snippet.channelId;
     }
-    
     throw new Error(`Channel '@${username}' not found`);
 }
 
 async function getAllVideosFromChannel(channelId, channelName) {
     const videos = [];
-    
     try {
-        // Get channel info to find uploads playlist
         const channelData = await getChannelInfo(channelId);
         const uploadsPlaylistId = channelData.items[0].contentDetails.relatedPlaylists.uploads;
-        
         if (!uploadsPlaylistId) {
             throw new Error('No uploads playlist found');
         }
-        
         let nextPageToken = '';
         let pageCount = 0;
-        
         do {
             const playlistParams = `part=snippet&playlistId=${uploadsPlaylistId}&maxResults=50${nextPageToken ? `&pageToken=${nextPageToken}` : ''}`;
             const playlistData = await makeAPIRequest('/playlistItems', playlistParams);
-            
             if (playlistData.items && playlistData.items.length > 0) {
                 const videoIds = playlistData.items.map(item => item.snippet.resourceId.videoId).filter(id => id).join(',');
-                
                 if (videoIds) {
                     const videoParams = `part=snippet,statistics,contentDetails&id=${videoIds}`;
                     const videoDetails = await makeAPIRequest('/videos', videoParams);
-                    
                     videoDetails.items?.forEach(video => {
                         videos.push({
                             title: video.snippet.title,
@@ -215,24 +191,17 @@ async function getAllVideosFromChannel(channelId, channelName) {
                     });
                 }
             }
-            
             nextPageToken = playlistData.nextPageToken || '';
             pageCount++;
-            
             updateLoadingProgress('channelProgress', (pageCount * 10) % 100);
             document.getElementById('loadingText').textContent = `${channelName}: Found ${videos.length} videos (Page ${pageCount})`;
-            
             await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
-            
             if (pageCount > 100) break;
-            
         } while (nextPageToken);
-        
     } catch (error) {
         console.error(`Error extracting videos for ${channelName}:`, error);
         throw error;
     }
-    
     return videos;
 }
 
@@ -241,13 +210,10 @@ function generateChannelAnalytics(channelData, videos) {
     const totalViews = videos.reduce((sum, v) => sum + parseInt(v.views.replace(/,/g, '') || 0), 0);
     const totalLikes = videos.reduce((sum, v) => sum + parseInt(v.likes.replace(/,/g, '') || 0), 0);
     const totalComments = videos.reduce((sum, v) => sum + parseInt(v.comments.replace(/,/g, '') || 0), 0);
-    
     const avgViews = videos.length ? Math.round(totalViews / videos.length) : 0;
     const avgLikes = videos.length ? Math.round(totalLikes / videos.length) : 0;
     const avgComments = videos.length ? Math.round(totalComments / videos.length) : 0;
-    
     const engagementRate = totalViews ? ((totalLikes + totalComments) / totalViews * 100).toFixed(2) : 0;
-    
     return {
         channelName: channelData.snippet.title,
         channelId: channelData.id,
@@ -273,7 +239,6 @@ function extractVideoId(url) {
         /youtube\.com\/v\/([a-zA-Z0-9_-]+)/,
         /^([a-zA-Z0-9_-]{11})$/
     ];
-    
     for (const pattern of patterns) {
         const match = url.match(pattern);
         if (match) return match[1];
@@ -287,7 +252,6 @@ function formatDuration(duration) {
     const hours = parseInt(match[1] || 0);
     const minutes = parseInt(match[2] || 0);
     const seconds = parseInt(match[3] || 0);
-    
     if (hours > 0) {
         return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     }
@@ -306,16 +270,14 @@ function updateLoadingProgress(elementId, percentage) {
     }
 }
 
-// Main Functions
+// Main Functions - FIXED MULTIPLE CHANNEL PROCESSING
 async function extractAllVideos() {
     const urls = document.getElementById('channelUrls').value.trim().split('\n').filter(url => url.trim());
-    
     if (urls.length === 0) {
         showToast('Please enter at least one channel URL or ID', 'error');
         return;
     }
 
-    // UI Updates
     document.getElementById('channelLoading').style.display = 'block';
     document.getElementById('channelResults').innerHTML = '';
     document.getElementById('extractBtn').disabled = true;
@@ -325,12 +287,12 @@ async function extractAllVideos() {
     try {
         allVideos = [];
         channelAnalytics = [];
+        let processedChannels = 0;
         
         for (let i = 0; i < urls.length; i++) {
             const url = urls[i].trim();
-            
             try {
-                document.getElementById('loadingText').textContent = `Processing channel ${i + 1} of ${urls.length}...`;
+                document.getElementById('loadingText').textContent = `Processing channel ${i + 1} of ${urls.length}: ${url.substring(0, 50)}...`;
                 updateLoadingProgress('channelProgress', (i / urls.length) * 100);
                 
                 const channelInfo = extractChannelId(url);
@@ -345,8 +307,15 @@ async function extractAllVideos() {
                     channelId = await resolveUsername(channelInfo.value);
                 }
                 
+                document.getElementById('loadingText').textContent = `Getting channel info for ${channelId}...`;
                 const channelData = await getChannelInfo(channelId);
+                
+                if (!channelData.items || channelData.items.length === 0) {
+                    throw new Error('Channel not found or private');
+                }
+                
                 const channelName = channelData.items[0].snippet.title;
+                document.getElementById('loadingText').textContent = `Extracting videos from ${channelName}...`;
                 
                 const videos = await getAllVideosFromChannel(channelId, channelName);
                 allVideos.push(...videos);
@@ -354,15 +323,35 @@ async function extractAllVideos() {
                 const analytics = generateChannelAnalytics(channelData.items[0], videos);
                 channelAnalytics.push(analytics);
                 
+                processedChannels++;
+                document.getElementById('loadingText').textContent = `Completed ${processedChannels}/${urls.length} channels. Found ${allVideos.length} total videos.`;
+                
+                if (i < urls.length - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                }
+                
             } catch (error) {
                 console.error(`Error processing ${url}:`, error);
-                showToast(`Error with ${url}: ${error.message}`, 'error');
+                document.getElementById('loadingText').textContent = `Error with channel ${i + 1}: ${error.message}`;
+                
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error';
+                errorDiv.innerHTML = `<i class="fas fa-exclamation-triangle"></i> <strong>Error with ${url}:</strong> ${error.message}`;
+                document.getElementById('channelResults').appendChild(errorDiv);
+                
+                await new Promise(resolve => setTimeout(resolve, 1000));
             }
         }
         
         updateLoadingProgress('channelProgress', 100);
-        displayChannelResults();
-        showToast(`Successfully extracted ${allVideos.length} videos from ${channelAnalytics.length} channels!`);
+        
+        if (allVideos.length > 0) {
+            displayChannelResults();
+            showToast(`Successfully extracted ${allVideos.length} videos from ${processedChannels} channels!`);
+        } else {
+            document.getElementById('channelResults').innerHTML = '<div class="error"><i class="fas fa-exclamation-triangle"></i>No videos found from any channels. Please check the URLs and try again.</div>';
+            showToast('No videos extracted. Check channel URLs.', 'error');
+        }
         
     } catch (error) {
         showToast(`Extraction failed: ${error.message}`, 'error');
@@ -376,13 +365,11 @@ async function extractAllVideos() {
 
 async function analyzeVideos() {
     const urls = document.getElementById('videoUrls').value.trim().split('\n').filter(url => url.trim());
-    
     if (urls.length === 0) {
         showToast('Please enter at least one video URL or ID', 'error');
         return;
     }
 
-    // UI Updates
     document.getElementById('videoLoading').style.display = 'block';
     document.getElementById('videoResults').innerHTML = '';
     document.getElementById('analyzeBtn').disabled = true;
@@ -391,23 +378,18 @@ async function analyzeVideos() {
 
     try {
         const videoIds = urls.map(url => extractVideoId(url.trim())).filter(id => id);
-        
         if (videoIds.length === 0) {
             throw new Error('No valid video URLs or IDs found');
         }
 
         videoData = [];
-        
         for (let i = 0; i < videoIds.length; i += 50) {
             const batch = videoIds.slice(i, i + 50);
             const batchIds = batch.join(',');
-            
             document.getElementById('videoLoadingText').textContent = `Analyzing videos ${i + 1}-${Math.min(i + 50, videoIds.length)} of ${videoIds.length}...`;
             updateLoadingProgress('videoProgress', ((i + 50) / videoIds.length) * 100);
-            
             const params = `part=snippet,statistics,contentDetails&id=${batchIds}`;
             const data = await makeAPIRequest('/videos', params);
-            
             if (data.items) {
                 data.items.forEach(video => {
                     videoData.push({
@@ -428,11 +410,9 @@ async function analyzeVideos() {
                 });
             }
         }
-        
         updateLoadingProgress('videoProgress', 100);
         displayVideoResults();
         showToast(`Successfully analyzed ${videoData.length} videos!`);
-        
     } catch (error) {
         showToast(`Analysis failed: ${error.message}`, 'error');
     } finally {
@@ -446,14 +426,12 @@ async function analyzeVideos() {
 // Display Functions
 function displayChannelResults() {
     const resultsDiv = document.getElementById('channelResults');
-    
     if (allVideos.length === 0) {
         resultsDiv.innerHTML = '<div class="error"><i class="fas fa-exclamation-triangle"></i>No videos found</div>';
         return;
     }
 
     const channelCount = new Set(allVideos.map(v => v.channelName)).size;
-    
     let html = `
         <div class="results-header">
             <h3><i class="fas fa-chart-line"></i>Extracted ${allVideos.length} Videos from ${channelCount} Channels</h3>
@@ -465,29 +443,17 @@ function displayChannelResults() {
             <table>
                 <thead>
                     <tr>
-                        <th>#</th>
-                        <th>Thumbnail</th>
-                        <th>Title</th>
-                        <th>Channel</th>
-                        <th>Views</th>
-                        <th>Likes</th>
-                        <th>Comments</th>
-                        <th>Duration</th>
-                        <th>Published</th>
-                        <th>Video ID</th>
-                        <th>Actions</th>
+                        <th>#</th><th>Thumbnail</th><th>Title</th><th>Channel</th><th>Views</th><th>Likes</th>
+                        <th>Comments</th><th>Duration</th><th>Published</th><th>Video ID</th><th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
     `;
-    
     allVideos.forEach((video, index) => {
         html += `
             <tr>
                 <td>${index + 1}</td>
-                <td class="thumbnail-cell">
-                    <img src="${video.thumbnail}" alt="Thumbnail" loading="lazy">
-                </td>
+                <td class="thumbnail-cell"><img src="${video.thumbnail}" alt="Thumbnail" loading="lazy"></td>
                 <td class="title-cell">${video.title.substring(0, 50)}...</td>
                 <td>${video.channelName}</td>
                 <td class="stats-cell">${video.views}</td>
@@ -507,14 +473,12 @@ function displayChannelResults() {
             </tr>
         `;
     });
-    
     html += '</tbody></table></div>';
     resultsDiv.innerHTML = html;
 }
 
 function displayVideoResults() {
     const resultsDiv = document.getElementById('videoResults');
-    
     if (videoData.length === 0) {
         resultsDiv.innerHTML = '<div class="error"><i class="fas fa-exclamation-triangle"></i>No videos found</div>';
         return;
@@ -531,29 +495,17 @@ function displayVideoResults() {
             <table>
                 <thead>
                     <tr>
-                        <th>#</th>
-                        <th>Thumbnail</th>
-                        <th>Title</th>
-                        <th>Channel</th>
-                        <th>Views</th>
-                        <th>Likes</th>
-                        <th>Comments</th>
-                        <th>Duration</th>
-                        <th>Published</th>
-                        <th>Tags</th>
-                        <th>Actions</th>
+                        <th>#</th><th>Thumbnail</th><th>Title</th><th>Channel</th><th>Views</th><th>Likes</th>
+                        <th>Comments</th><th>Duration</th><th>Published</th><th>Tags</th><th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
     `;
-    
     videoData.forEach((video, index) => {
         html += `
             <tr>
                 <td>${index + 1}</td>
-                <td class="thumbnail-cell">
-                    <img src="${video.thumbnail}" alt="Thumbnail" loading="lazy">
-                </td>
+                <td class="thumbnail-cell"><img src="${video.thumbnail}" alt="Thumbnail" loading="lazy"></td>
                 <td class="title-cell">${video.title.substring(0, 50)}...</td>
                 <td>${video.channelName}</td>
                 <td class="stats-cell">${video.views}</td>
@@ -573,14 +525,12 @@ function displayVideoResults() {
             </tr>
         `;
     });
-    
     html += '</tbody></table></div>';
     resultsDiv.innerHTML = html;
 }
 
 function updateAnalyticsDashboard() {
     const analyticsGrid = document.getElementById('analyticsGrid');
-    
     if (channelAnalytics.length === 0 && videoData.length === 0) {
         analyticsGrid.innerHTML = `
             <div class="analytics-placeholder">
@@ -593,13 +543,10 @@ function updateAnalyticsDashboard() {
     }
     
     let html = '';
-    
-    // Channel Analytics
     if (channelAnalytics.length > 0) {
         const totalSubscribers = channelAnalytics.reduce((sum, c) => sum + parseInt(c.subscriberCount.replace(/,/g, '') || 0), 0);
         const totalChannelViews = channelAnalytics.reduce((sum, c) => sum + parseInt(c.totalChannelViews.replace(/,/g, '') || 0), 0);
         const avgEngagement = channelAnalytics.reduce((sum, c) => sum + parseFloat(c.engagementRate.replace('%', '') || 0), 0) / channelAnalytics.length;
-        
         html += `
             <div class="analytics-card">
                 <h4><i class="fas fa-users"></i> Total Subscribers</h4>
@@ -618,14 +565,11 @@ function updateAnalyticsDashboard() {
             </div>
         `;
     }
-    
-    // Video Analytics
     if (allVideos.length > 0 || videoData.length > 0) {
         const videos = allVideos.length > 0 ? allVideos : videoData;
         const totalViews = videos.reduce((sum, v) => sum + parseInt(v.views.replace(/,/g, '') || 0), 0);
         const totalLikes = videos.reduce((sum, v) => sum + parseInt(v.likes.replace(/,/g, '') || 0), 0);
         const avgViews = Math.round(totalViews / videos.length);
-        
         html += `
             <div class="analytics-card">
                 <h4><i class="fas fa-play"></i> Total Videos</h4>
@@ -649,7 +593,6 @@ function updateAnalyticsDashboard() {
             </div>
         `;
     }
-    
     analyticsGrid.innerHTML = html;
 }
 
@@ -698,7 +641,6 @@ function exportChannelData() {
         showToast('No data to export', 'error');
         return;
     }
-    
     const csv = 'Title,Channel Name,Video ID,Channel ID,URL,Views,Likes,Comments,Duration,Published Date,Tags,Description\n' +
         allVideos.map(video => 
             `"${video.title}","${video.channelName}","${video.videoId}","${video.channelId}","${video.url}","${video.views}","${video.likes}","${video.comments}","${video.duration}","${video.publishedDate}","${video.tags}","${video.description}"`
@@ -712,7 +654,6 @@ function exportVideoData() {
         showToast('No data to export', 'error');
         return;
     }
-    
     const csv = 'Title,Channel Name,Video ID,Channel ID,URL,Views,Likes,Comments,Duration,Published Date,Tags,Description\n' +
         videoData.map(video => 
             `"${video.title}","${video.channelName}","${video.videoId}","${video.channelId}","${video.url}","${video.views}","${video.likes}","${video.comments}","${video.duration}","${video.publishedDate}","${video.tags}","${video.description}"`
