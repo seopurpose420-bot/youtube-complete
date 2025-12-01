@@ -9,7 +9,7 @@ const decode = (str) => Buffer.from(str, 'base64').toString('ascii');
 const API_ENDPOINT = process.env.API_ENDPOINT ? decode(process.env.API_ENDPOINT) : 'https://ytapi.apps.mattw.io/v3';
 
 // Middleware
-app.use(express.static('.'));
+app.use(express.static(__dirname));
 app.use(express.json());
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
@@ -110,6 +110,15 @@ app.get('/api/data/*', handleAPIRequest);
 // Serve main application
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Serve static files explicitly
+app.get('/styles.css', (req, res) => {
+    res.sendFile(path.join(__dirname, 'styles.css'));
+});
+
+app.get('/script.js', (req, res) => {
+    res.sendFile(path.join(__dirname, 'script.js'));
 });
 
 // 404 handler
