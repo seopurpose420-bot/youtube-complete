@@ -3,7 +3,10 @@
   "builds": [
     {
       "src": "server.js",
-      "use": "@vercel/node"
+      "use": "@vercel/node",
+      "config": {
+        "maxDuration": 30
+      }
     }
   ],
   "routes": [
@@ -20,10 +23,5 @@
     "QUOTA_USER_1": "eHNTSGFIbXJtdHpGRWFYRjVTVmFaYUhQNkFrdmRCcUlRMEU2cU1jMw==",
     "QUOTA_USER_2": "cmFuZG9tVXNlcjEyMw==",
     "QUOTA_USER_3": "YW5vdGhlclVzZXI0NTY="
-  },
-  "functions": {
-    "server.js": {
-      "maxDuration": 30
-    }
   }
 }
